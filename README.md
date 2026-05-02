@@ -38,6 +38,20 @@ curl -X POST http://localhost:8080/v1/swarm/run \
   -d '{"input":"Analyze this listing investment risk."}'
 ```
 
+Or use async jobs:
+
+```bash
+# Create a job
+curl -X POST http://localhost:8080/v1/jobs \
+  -H "content-type: application/json" \
+  -d '{"input":"Analyze this listing investment risk."}'
+```
+
+```bash
+# Poll status/result
+curl http://localhost:8080/v1/jobs/job-1
+```
+
 ## LLM provider plug-and-play
 
 The runtime supports multiple providers via environment variables:

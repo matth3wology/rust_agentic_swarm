@@ -22,6 +22,8 @@ API endpoints:
 
 - `GET /healthz`
 - `POST /v1/swarm/run` with JSON body: `{"input":"..."}`.
+- `POST /v1/jobs` with JSON body: `{"input":"..."}`.
+- `GET /v1/jobs/:id` for async job status/result.
 
 ## Notes
 
