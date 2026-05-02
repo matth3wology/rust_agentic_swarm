@@ -1,0 +1,88 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/your-org/ai-agent
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podSecurityContext: {}
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop:
+      - ALL
+
+# Because this binary is currently CLI-oriented, pass your prompt as args.
+# Example:
+# args:
+#   - "Summarize this repository."
+args: []
+
+env:
+  LLM_PROVIDER: "anthropic"
+  ANTHROPIC_API_KEY: ""
+  ANTHROPIC_MODEL: ""
+  OPENAI_API_KEY: ""
+  OPENAI_MODEL: ""
+  # Extra variables for role-based routing, for example:
+  # WORKER_RESEARCHER_LLM_PROVIDER: "openai"
+  # WORKER_RESEARCHER_MODEL: "gpt-4o-mini"
+  # SUPERVISOR_LLM_PROVIDER: "anthropic"
+  # SUPERVISOR_MODEL: "claude-sonnet-4-20250514"
+  extra: {}
+
+existingSecret:
+  enabled: false
+  name: ""
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ai-agent.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+livenessProbe: null
+readinessProbe: null
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

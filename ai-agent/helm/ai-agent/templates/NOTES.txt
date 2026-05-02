@@ -1,0 +1,10 @@
+1. Get the release status:
+   kubectl get all -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+2. Inspect logs:
+   kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "ai-agent.fullname" . }} -f
+
+{{- if .Values.service.enabled }}
+3. If service is enabled, access locally:
+   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "ai-agent.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+{{- end }}
