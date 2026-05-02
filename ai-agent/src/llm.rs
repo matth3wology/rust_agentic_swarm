@@ -43,11 +43,6 @@ impl LlmClient for AnyLlmClient {
     }
 }
 
-/// Creates an LLM client from `LLM_PROVIDER` (`anthropic` default, or `openai`).
-pub fn client_from_env() -> Result<AnyLlmClient> {
-    client_for_role("default")
-}
-
 /// Creates an LLM client for a given swarm role (or `supervisor`) using env overrides.
 pub fn client_for_role(role: &str) -> Result<AnyLlmClient> {
     let (provider, model_override) = provider_and_model_for_role(role);

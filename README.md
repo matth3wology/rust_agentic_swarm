@@ -23,6 +23,21 @@ cd ai-agent
 cargo run -- "Evaluate whether Rust is a good fit for a CLI data pipeline."
 ```
 
+Run as API service:
+
+```bash
+cd ai-agent
+APP_MODE=api PORT=8080 cargo run
+```
+
+Then call:
+
+```bash
+curl -X POST http://localhost:8080/v1/swarm/run \
+  -H "content-type: application/json" \
+  -d '{"input":"Analyze this listing investment risk."}'
+```
+
 ## LLM provider plug-and-play
 
 The runtime supports multiple providers via environment variables:
@@ -108,6 +123,8 @@ helm upgrade --install ai-agent ./ai-agent/helm/ai-agent \
   --namespace ai-agent --create-namespace \
   --set image.repository=<registry>/ai-agent \
   --set image.tag=0.1.0 \
+  --set env.APP_MODE=api \
+  --set env.PORT=8080 \
   --set env.LLM_PROVIDER=anthropic \
   --set env.ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
   --set args[0]="Summarize this repository."

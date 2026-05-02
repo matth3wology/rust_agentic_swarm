@@ -41,6 +41,10 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
+            - name: APP_MODE
+              value: {{ .Values.env.APP_MODE | quote }}
+            - name: PORT
+              value: {{ .Values.env.PORT | quote }}
             - name: LLM_PROVIDER
               value: {{ .Values.env.LLM_PROVIDER | quote }}
             - name: ANTHROPIC_MODEL

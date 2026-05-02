@@ -1,4 +1,5 @@
 mod agent;
+mod api;
 mod blackboard;
 mod llm;
 mod memory;
@@ -12,7 +13,6 @@ use std::env;
 use std::io::{self, Read};
 
 use anyhow::Result;
-use llm::client_for_role;
 use swarm::{SwarmConfig, SwarmOrchestrator};
 use tools::{FileIoTool, ToolRegistry, WebSearchTool};
 
@@ -27,9 +27,20 @@ async fn main() -> Result<()> {
     println!("Tools registered");
 
     let config = SwarmConfig::default();
-    let swarm = SwarmOrchestrator::new(client_for_role, registry, config);
+    let args: Vec<String> = env::args().skip(1).collect();
+    let run_as_api = env::var("APP_MODE")
+        .map(|value| value.eq_ignore_ascii_case("api"))
+        .unwrap_or(false)
+        || args.first().map(|arg| arg == "serve").unwrap_or(false);
+
+    if run_as_api {
+        api::serve(registry, config).await?;
+        return Ok(());
+    }
+
+    let swarm = SwarmOrchestrator::new(llm::client_for_role, registry, config);
     println!("Swarm orchestrator created");
-    let user_input = parse_user_input()?;
+    let user_input = parse_user_input(&args)?;
     println!("User input: {user_input}");
     let result = swarm.run(&user_input).await?;
     println!("Blackboard contributions: {}", result.blackboard.entries().len());
@@ -38,8 +49,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn parse_user_input() -> Result<String> {
-    let args: Vec<String> = env::args().skip(1).collect();
+fn parse_user_input(args: &[String]) -> Result<String> {
     if !args.is_empty() {
         return Ok(args.join(" "));
     }
@@ -59,7 +69,10 @@ mod tests {
 
     #[test]
     fn parse_user_input_function_is_linked() {
-        let ptr = parse_user_input as fn() -> anyhow::Result<String>;
-        assert!(std::ptr::fn_addr_eq(ptr, parse_user_input as fn() -> anyhow::Result<String>));
+        let ptr = parse_user_input as fn(&[String]) -> anyhow::Result<String>;
+        assert!(std::ptr::fn_addr_eq(
+            ptr,
+            parse_user_input as fn(&[String]) -> anyhow::Result<String>
+        ));
     }
 }

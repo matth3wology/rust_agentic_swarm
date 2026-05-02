@@ -12,10 +12,16 @@ docker push your-registry/ai-agent:0.1.0
 helm upgrade --install ai-agent ./helm/ai-agent \
   --set image.repository=your-registry/ai-agent \
   --set image.tag=0.1.0 \
+  --set env.APP_MODE=api \
+  --set env.PORT=8080 \
   --set env.LLM_PROVIDER=anthropic \
-  --set env.ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-  --set args[0]="Summarize the latest Rust release notes."
+  --set env.ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
 ```
+
+API endpoints:
+
+- `GET /healthz`
+- `POST /v1/swarm/run` with JSON body: `{"input":"..."}`.
 
 ## Notes
 
@@ -30,5 +36,5 @@ helm upgrade --install ai-agent ./helm/ai-agent \
   - `env.extra.WORKER_RESEARCHER_MODEL=gpt-4o-mini`
   - `env.extra.SUPERVISOR_LLM_PROVIDER=anthropic`
   - `env.extra.SUPERVISOR_MODEL=claude-sonnet-4-20250514`
-- The current binary is CLI-oriented, so provide request text through `args`.
+- Use `env.APP_MODE=api` for HTTP service mode, or `env.APP_MODE=cli` for one-shot CLI mode.
 - `service.enabled` and `ingress.enabled` are optional and disabled by default.

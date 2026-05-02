@@ -39,6 +39,11 @@ impl Blackboard {
         &self.entries
     }
 
+    /// Returns a cloned list of entries for API responses.
+    pub fn entries_owned(&self) -> Vec<BlackboardEntry> {
+        self.entries.clone()
+    }
+
     /// Renders entries in a compact prompt-ready format.
     pub fn render_for_prompt(&self) -> String {
         let mut out = String::new();

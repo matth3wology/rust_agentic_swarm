@@ -36,6 +36,8 @@ securityContext:
 args: []
 
 env:
+  APP_MODE: "cli"
+  PORT: "8080"
   LLM_PROVIDER: "anthropic"
   ANTHROPIC_API_KEY: ""
   ANTHROPIC_MODEL: ""
