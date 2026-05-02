@@ -11,6 +11,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use tower_http::trace::TraceLayer;
 
 use crate::llm::client_for_role;
 use crate::swarm::{SwarmConfig, SwarmOrchestrator};
@@ -83,6 +84,7 @@ pub async fn serve(tools: ToolRegistry, config: SwarmConfig) -> Result<()> {
         .route("/v1/swarm/run", post(run_swarm))
         .route("/v1/jobs", post(create_job))
         .route("/v1/jobs/:id", get(get_job))
+        .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     let port = std::env::var("PORT")
@@ -90,7 +92,15 @@ pub async fn serve(tools: ToolRegistry, config: SwarmConfig) -> Result<()> {
         .and_then(|raw| raw.parse::<u16>().ok())
         .unwrap_or(8080);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    tracing::info!("starting api server on {}", addr);
+    tracing::info!(%addr, "starting api server");
+    tracing::info!(
+        base_url = %format!("http://127.0.0.1:{port}"),
+        health = "/healthz",
+        run = "/v1/swarm/run",
+        create_job = "/v1/jobs",
+        get_job = "/v1/jobs/:id",
+        "api endpoints ready"
+    );
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -151,6 +161,7 @@ async fn create_job(
 
     let seq = state.job_sequence.fetch_add(1, Ordering::Relaxed);
     let job_id = format!("job-{seq}");
+    tracing::info!(job_id = %job_id, "job accepted");
     let initial_record = JobRecord {
         id: job_id.clone(),
         input: req.input.clone(),
@@ -192,10 +203,12 @@ async fn create_job(
                     record.final_decision = Some(output.final_decision);
                     record.blackboard_entries = Some(output.blackboard.entries_owned());
                     record.error = None;
+                    tracing::info!(job_id = %job_id_for_task, "job completed");
                 }
                 Err(err) => {
                     record.status = JobStatus::Failed;
                     record.error = Some(err.to_string());
+                    tracing::error!(job_id = %job_id_for_task, error = %err, "job failed");
                 }
             }
         }

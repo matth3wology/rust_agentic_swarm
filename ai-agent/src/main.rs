@@ -15,16 +15,18 @@ use std::io::{self, Read};
 use anyhow::Result;
 use swarm::{SwarmConfig, SwarmOrchestrator};
 use tools::{FileIoTool, ToolRegistry, WebSearchTool};
+use tracing::info;
+use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    init_logging();
 
     let mut registry = ToolRegistry::new();
     registry.register(WebSearchTool::new());
     registry.register(FileIoTool::new());
-    println!("Tools registered");
+    info!("tools registered");
 
     let config = SwarmConfig::default();
     let args: Vec<String> = env::args().skip(1).collect();
@@ -34,16 +36,20 @@ async fn main() -> Result<()> {
         || args.first().map(|arg| arg == "serve").unwrap_or(false);
 
     if run_as_api {
+        info!("starting in API mode");
         api::serve(registry, config).await?;
         return Ok(());
     }
 
     let swarm = SwarmOrchestrator::new(llm::client_for_role, registry, config);
-    println!("Swarm orchestrator created");
+    info!("starting in CLI mode");
     let user_input = parse_user_input(&args)?;
-    println!("User input: {user_input}");
+    info!(input_len = user_input.len(), "received CLI input");
     let result = swarm.run(&user_input).await?;
-    println!("Blackboard contributions: {}", result.blackboard.entries().len());
+    info!(
+        blackboard_entries = result.blackboard.entries().len(),
+        "swarm completed"
+    );
     println!("{}", result.final_decision);
 
     Ok(())
@@ -61,6 +67,12 @@ fn parse_user_input(args: &[String]) -> Result<String> {
         anyhow::bail!("Provide input via CLI args or stdin");
     }
     Ok(trimmed)
+}
+
+fn init_logging() {
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,axum=info,tower_http=info"));
+    tracing_subscriber::fmt().with_env_filter(filter).init();
 }
 
 #[cfg(test)]
